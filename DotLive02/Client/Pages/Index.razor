@@ -1,0 +1,82 @@
+﻿@page "/"
+@using DotLive02.Shared.Models;
+@inject HttpClient HttpClient;
+@inject NavigationManager Navigation;
+
+<PageTitle>Vagas Abertas</PageTitle>
+
+<h1>Vagas Abertas</h1>
+
+@if (showMessage)
+{
+    <div class="alert alert-success" role="alert">
+        Sucesso ao aplicar para vaga @currentJob !
+    </div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <td>Título</td>
+            <td>Descrição</td>
+            <td>Empresa</td>
+            <td>Localização</td>
+            <td>Salário</td>
+            <td>Ações</td>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach(var job in model)
+        {
+            if(job is not null)
+            {
+                <tr>
+                    <td>@job.Title</td>
+                    <td>@job.Description</td>
+                    <td>@job.Company</td>
+                    <td>@job.Location</td>
+                    <td>@job.Salary</td>
+                    <td>
+                        <span class="oi oi-pencil clicable-icon" aria-hidden="true"
+                            @onclick="() => NavigateToUpdate(job.Id)"></span>
+                        <span class="oi oi-document clicable-icon" aria-hidden="true"
+                              @onclick="() => ApplyToJob(job)"></span>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+
+
+</table>
+
+@code {
+    private List<JobViewModel> model = new();
+    private bool showMessage = false;
+    private string currentJob = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = await HttpClient.GetFromJsonAsync<List<JobViewModel>>($"api/jobs");
+    }
+
+    private void NavigateToUpdate(Guid id)
+    {
+        Navigation.NavigateTo($"update-job/{id}");
+    }
+
+    private async Task ApplyToJob(JobViewModel job)
+    {
+        var response = await HttpClient.PostAsync($"api/jobs/{job.Id}/applications", null);
+
+        if (response.IsSuccessStatusCode)
+        {
+            currentJob = job.Title;
+            showMessage = true;
+            await InvokeAsync(StateHasChanged);
+        }
+
+    }
+
+}

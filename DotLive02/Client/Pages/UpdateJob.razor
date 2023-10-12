@@ -1,0 +1,99 @@
+﻿@page "/update-job/{id}"
+@using DotLive02.Shared.Models;
+@using System.Text.Json;
+@using System.Text;
+@using System.Net.Http.Headers;
+@inject HttpClient HttpClient;
+
+<PageTitle>Atualize uma vaga</PageTitle>
+
+<h1> Atualize uma vaga</h1>
+
+<div class="form-container">
+    @if (showMessage)
+    {
+        <div class="alert alert-success" role="alert">
+            Vaga atualizada com sucesso!
+        </div>
+    }
+
+    <EditForm Model="@model" OnValidSubmit="@HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label> Título</label>
+                    <InputText class="form-control" @bind-Value="@model.Title" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label> Descrição </label>
+                    <InputText class="form-control" @bind-Value="@model.Description" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label> Empresa</label>
+                    <InputText class="form-control" @bind-Value="@model.Company" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label> Local</label>
+                    <InputText class="form-control" @bind-Value="@model.Location" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label> Salário</label>
+                    <InputNumber class="form-control" @bind-Value="@model.Salary" />
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3"> Salvar</button>
+    </EditForm>
+
+</div>
+
+@code {
+    private JobInputModel model = new();
+    private bool showMessage = false;
+
+    [Parameter]
+    public string Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = await HttpClient.GetFromJsonAsync<JobInputModel>($"api/jobs/{Id}");
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        var json = JsonSerializer.Serialize(model);
+        var request = new HttpRequestMessage(HttpMethod.Put, $"api/jobs/{Id}");
+        request.Content = new StringContent(json, Encoding.UTF8);
+
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+        var response = await HttpClient.SendAsync(request);
+
+        showMessage = response.IsSuccessStatusCode;
+
+        await InvokeAsync(StateHasChanged);
+    }
+}
